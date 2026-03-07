@@ -5,5 +5,4 @@ faiss-cpu
 openai
 tiktoken
 rank-bm25
-ragas
-datasets
+numpy
