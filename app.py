@@ -20,20 +20,21 @@ def load_resources():
 vector_store, bm25, all_docs = load_resources()
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
+# REPLACE with this
 def rewrite_query(query, history_text):
-    vague_words = ["it", "this", "that", "those", "same", "above", "previous", "one"]
-    needs_rewriting = any(word in query.lower().split() for word in vague_words)
-    if not needs_rewriting or not history_text:
-        return query
+    if not history_text:
+        return query  # first question, nothing to rewrite with
     recent_history = "\n".join(history_text.split("\n")[-4:])
     rewrite_prompt = f"""Given this recent conversation:
 {recent_history}
 
-Rewrite this follow-up question as a complete standalone question:
-"{query}"
+Rewrite this question as a complete standalone question.
+If it already makes complete sense on its own, return it unchanged.
+
+Question: "{query}"
 
 Return only the rewritten question, nothing else."""
-    return llm.invoke(rewrite_prompt).content
+    return llm.invoke(rewrite_prompt).content.strip()
 
 def hybrid_search(query, k=5, semantic_weight=0.7):
     semantic_results = vector_store.similarity_search_with_score(query, k=k)
