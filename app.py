@@ -20,10 +20,9 @@ def load_resources():
 vector_store, bm25, all_docs = load_resources()
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-# REPLACE with this
 def rewrite_query(query, history_text):
     if not history_text:
-        return query  # first question, nothing to rewrite with
+        return query
     recent_history = "\n".join(history_text.split("\n")[-4:])
     rewrite_prompt = f"""Given this recent conversation:
 {recent_history}
@@ -36,7 +35,7 @@ Question: "{query}"
 Return only the rewritten question, nothing else."""
     return llm.invoke(rewrite_prompt).content.strip()
 
-def hybrid_search(query, k=5, semantic_weight=0.7):
+def hybrid_search(query, k=3, semantic_weight=0.7):
     semantic_results = vector_store.similarity_search_with_score(query, k=k)
     tokenized_query = query.lower().split()
     bm25_scores = bm25.get_scores(tokenized_query)
@@ -67,16 +66,60 @@ def get_confidence_label(score):
     else:
         return "🔴 Low confidence — answer may be incomplete"
 
+# ── Session state ──────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "suggested_query" not in st.session_state:
+    st.session_state.suggested_query = None
 
+# ── Title and onboarding ───────────────────────────────────
 st.title("🧠 Advanced RAG Chatbot on Human Chakras")
 
+st.markdown("""
+**This chatbot answers questions from a private knowledge base covering:**
+- 🧘 Human Chakras & Energy Centers
+- 🌬️ Breathing Techniques & Relaxation
+- 👨‍👩‍👧 Family Systems & Dysfunctional Families
+- 🧠 Hypnotherapy & Behavioral Resolutions
+- ❤️ Emotional Health & Anxiety
+
+**Try asking:**
+""")
+
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("🧘 What is the heart chakra?"):
+        st.session_state.suggested_query = "What is the heart chakra?"
+    if st.button("🌬️ Breathing techniques for relaxation?"):
+        st.session_state.suggested_query = "What are breathing techniques for relaxation?"
+    if st.button("👨‍👩‍👧 Traits of a dysfunctional family?"):
+        st.session_state.suggested_query = "What are traits of a dysfunctional family?"
+with col2:
+    if st.button("🧠 What is corrective therapy?"):
+        st.session_state.suggested_query = "What is corrective therapy?"
+    if st.button("❤️ What are the two forms of anxiety?"):
+        st.session_state.suggested_query = "What are the two forms of anxiety?"
+    if st.button("✨ What is the law of repetition?"):
+        st.session_state.suggested_query = "What is the law of repetition?"
+
+st.divider()
+
+# ── Chat history display ───────────────────────────────────
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if query := st.chat_input("Ask a question..."):
+# ── Query handling ─────────────────────────────────────────
+typed_query = st.chat_input("Or type your own question...")
+
+query = None
+if typed_query:
+    query = typed_query
+elif st.session_state.suggested_query:
+    query = st.session_state.suggested_query
+    st.session_state.suggested_query = None
+
+if query:
     st.session_state.messages.append({"role": "user", "content": query})
     with st.chat_message("user"):
         st.markdown(query)
@@ -87,7 +130,7 @@ if query := st.chat_input("Ask a question..."):
         history_text += f"{role}: {m['content']}\n"
 
     search_query = rewrite_query(query, history_text)
-    results = hybrid_search(search_query, k=5)
+    results = hybrid_search(search_query, k=3)
     filtered = [r for r in results if r["score"] > 0.3]
     if not filtered:
         filtered = results[:2]
@@ -119,6 +162,7 @@ Question: {query}
             for source in sources:
                 st.write("-", source)
 
+# ── Sidebar ────────────────────────────────────────────────
 if st.sidebar.button("🗑️ Clear Chat"):
     st.session_state.messages = []
     st.rerun()
