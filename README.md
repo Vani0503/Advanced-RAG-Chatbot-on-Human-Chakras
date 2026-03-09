@@ -1,6 +1,8 @@
 # Advanced-RAG-Chatbot-on-Human-Chakras
 This project addresses advanced features in a RAG-based AI Chatbot such as semantic chunking, query re-writing by adding conversational memory in manual way, hybrid vector search, filter chunks based on similarity score, add confidence label based on retrieval score evaluation metrics, etc
 
+#Prototype: https://advanced-rag-chatbot-on-human-chakras-wg7thymeq3kcpsaqlhctta.streamlit.app/
+
 #Why I Built This
 My simple RAG chatbot worked well for direct questions. Ask “What is the crown chakra?” and it answers correctly. But the moment I asked a follow-up question, “How do I activate it?”, the system completely lost the thread. It had no memory of what “it” referred to. Every question was treated as if it were the first question ever asked.
 
